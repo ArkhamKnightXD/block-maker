@@ -8,7 +8,6 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import knight.arkham.helpers.Box2DBody;
-import knight.arkham.objects.Player;
 import knight.arkham.scenes.Hud;
 
 import static knight.arkham.helpers.AnimationHelper.makeAnimation;
@@ -63,8 +62,7 @@ public class Goomba extends Enemy {
             super.draw(batch);
     }
 
-    @Override
-    public void hitByPlayer(Player userData) {
+    public void hitByPlayer() {
 
         hitSound.play();
         setToDestroy = true;
@@ -75,5 +73,9 @@ public class Goomba extends Enemy {
     @Override
     public void childDispose() {
         hitRegion.getTexture().dispose();
+    }
+
+    public void setToDestroy() {
+        setToDestroy = true;
     }
 }

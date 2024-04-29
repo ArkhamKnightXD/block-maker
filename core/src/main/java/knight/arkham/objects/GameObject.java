@@ -10,7 +10,7 @@ import static knight.arkham.helpers.Box2DHelper.getDrawBounds;
 
 public abstract class GameObject {
 
-    protected final Rectangle actualBounds;
+    public final Rectangle actualBounds;
     protected final World actualWorld;
     protected TextureRegion actualRegion;
     protected final int framesWidth;

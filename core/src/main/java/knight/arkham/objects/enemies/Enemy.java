@@ -7,7 +7,6 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
-import knight.arkham.objects.Player;
 
 import static knight.arkham.helpers.AssetsHelper.loadSound;
 import static knight.arkham.helpers.Box2DHelper.getDrawBounds;
@@ -61,6 +60,10 @@ public abstract class Enemy {
 
     public Vector2 getPixelPosition() {return body.getPosition().scl(PIXELS_PER_METER);}
 
+    public Rectangle getActualBounds() {
+        return new Rectangle(getPixelPosition().x, getPixelPosition().y, actualBounds.width, actualBounds.height);
+    }
+
     protected void movement() {
 
         if (isMovingRight && body.getLinearVelocity().x <= 4)
@@ -100,8 +103,6 @@ public abstract class Enemy {
     public void changeDirection() {
         isMovingRight = !isMovingRight;
     }
-
-    public abstract void hitByPlayer(Player userData);
 
     public abstract void childDispose();
 

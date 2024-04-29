@@ -1,7 +1,6 @@
 package knight.arkham.helpers;
 
 import com.badlogic.gdx.physics.box2d.*;
-import knight.arkham.objects.enemies.Enemy;
 import knight.arkham.objects.Player;
 import knight.arkham.objects.enemies.Goomba;
 
@@ -22,9 +21,9 @@ public class GameContactListener implements ContactListener {
             case PLAYER_BIT | ENEMY_HEAD_BIT:
 
                 if (fixtureA.getFilterData().categoryBits == ENEMY_HEAD_BIT)
-                    ((Enemy) fixtureA.getUserData()).hitByPlayer(((Player) fixtureB.getUserData()));
+                    ((Goomba) fixtureA.getUserData()).hitByPlayer();
                 else
-                    ((Enemy) fixtureB.getUserData()).hitByPlayer(((Player) fixtureA.getUserData()));
+                    ((Goomba) fixtureB.getUserData()).hitByPlayer();
                 break;
 
             case PLAYER_BIT | GOOMBA_BIT:

@@ -14,6 +14,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
@@ -36,12 +37,16 @@ public class TileMapHelper {
     private final Box2DDebugRenderer debugRenderer = new Box2DDebugRenderer();
     private final OrthogonalTiledMapRenderer mapRenderer;
     private final Player player;
-    private final Array<Enemy> enemies = new Array<>();
+    private final Array<Goomba> enemies = new Array<>();
+    private final Array<Ground> grounds = new Array<>();
     private final Music music = loadMusic("mario_music.ogg");
     private float accumulator;
     private boolean isDebugCamera;
     private boolean isDebugRendererActive;
     private boolean isGameOver;
+    private boolean shouldCreateEnemy;
+    private boolean shouldDestroyGround;
+    private boolean shouldDestroyEnemy;
 
     public TileMapHelper(String mapFilePath) {
 
@@ -110,7 +115,50 @@ public class TileMapHelper {
         camera.update();
     }
 
+    private void createFloorOnClick(OrthographicCamera camera) {
+
+        var floorBounds = getActualMouseBounds(camera);
+
+        grounds.add(new Ground(floorBounds, world));
+    }
+
+    private void createEnemyOnClick(OrthographicCamera camera) {
+
+        Vector3 worldCoordinates = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(),0));
+        worldCoordinates.scl(PIXELS_PER_METER);
+
+        var enemyBounds = new Rectangle(worldCoordinates.x, worldCoordinates.y, 32, 16);
+
+        enemies.add(new Goomba(enemyBounds, world, atlas.findRegion("goomba"), 3));
+    }
+
+    private void removeGroundOnMouseClick(OrthographicCamera camera, Ground ground) {
+
+        var mouseBounds = getActualMouseBounds(camera);
+
+        if (mouseBounds.overlaps(ground.actualBounds)) {
+
+            grounds.removeValue(ground, true);
+            ground.setToDestroy();
+        }
+    }
+
     public void update(float deltaTime, OrthographicCamera camera) {
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.CONTROL_LEFT))
+            shouldCreateEnemy = !shouldCreateEnemy;
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.Q))
+            shouldDestroyGround = !shouldDestroyGround;
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E))
+            shouldDestroyEnemy = !shouldDestroyEnemy;
+
+        if (!shouldDestroyGround && !shouldCreateEnemy && Gdx.input.justTouched())
+            createFloorOnClick(camera);
+
+        if (shouldCreateEnemy && Gdx.input.justTouched())
+            createEnemyOnClick(camera);
 
         if (player.getCurrentState() == Player.AnimationState.DYING)
             music.pause();
@@ -127,7 +175,10 @@ public class TileMapHelper {
 
             updateCameraPosition(camera);
 
-            for (Enemy enemy : enemies) {
+            for (Goomba enemy : enemies) {
+
+                if (shouldDestroyEnemy && Gdx.input.justTouched())
+                    removeEnemyOnMouseClick(camera, enemy);
 
                 var distanceBetweenPlayerAndEnemy = player.getPixelPosition().dst(enemy.getPixelPosition());
 
@@ -137,8 +188,37 @@ public class TileMapHelper {
                 enemy.update(deltaTime);
             }
 
+            for (Ground ground : grounds) {
+
+                if (shouldDestroyGround && Gdx.input.justTouched())
+                    removeGroundOnMouseClick(camera, ground);
+
+                ground.update(deltaTime);
+            }
+
+            Gdx.app.log("size 2", String.valueOf(enemies.size));
+
             doPhysicsTimeStep(deltaTime);
         }
+    }
+
+    private void removeEnemyOnMouseClick(OrthographicCamera camera, Goomba enemy) {
+
+        var mouseBounds = getActualMouseBounds(camera);
+
+        if (mouseBounds.overlaps(enemy.getActualBounds())) {
+
+            enemies.removeValue(enemy, true);
+            enemy.setToDestroy();
+        }
+    }
+
+    private Rectangle getActualMouseBounds(OrthographicCamera camera) {
+
+        Vector3 worldCoordinates = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(),0));
+        worldCoordinates.scl(PIXELS_PER_METER);
+
+        return new Rectangle(worldCoordinates.x, worldCoordinates.y, 16, 16);
     }
 
     private void doPhysicsTimeStep(float deltaTime) {
@@ -175,6 +255,9 @@ public class TileMapHelper {
 
                 for (Enemy enemy : enemies)
                     enemy.draw(mapRenderer.getBatch());
+
+                for (Ground ground : grounds)
+                    ground.draw(mapRenderer.getBatch());
 
                 mapRenderer.getBatch().end();
             }
